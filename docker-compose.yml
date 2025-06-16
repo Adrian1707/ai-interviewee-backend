@@ -16,3 +16,10 @@ services:
     restart: unless-stopped
     stdin_open: true
     tty: true
+  
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
