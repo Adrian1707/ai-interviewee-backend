@@ -6,3 +6,6 @@ gunicorn
 pgvector
 psycopg2-binary
 django-extensions
+djangorestframework
+django-cors-headers
+pdfminer.six

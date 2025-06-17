@@ -80,9 +80,6 @@ class Document(BaseModel):
             models.Index(fields=['document_type', 'is_public']),
         ]
 
-    def __str__(self):
-        return f"{self.title} ({self.owner.username})"
-
 
 class DocumentChunk(BaseModel):
     """Represents a chunk of text extracted from a document with its embedding"""
