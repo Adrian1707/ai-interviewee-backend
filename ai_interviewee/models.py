@@ -2,9 +2,29 @@ from django.db import models
 from django.contrib.auth.models import User
 from pgvector.django import VectorField
 import uuid
+from pprint import pprint
 
+class BaseModel(models.Model):
+    class Meta:
+        abstract = True  # So it doesn't create a table
 
-class UserProfile(models.Model):
+    @classmethod
+    def all(cls):
+        return cls.objects.all()
+
+    @classmethod
+    def last(cls):
+        return cls.objects.last()
+
+    @classmethod
+    def get(cls, *args, **kwargs):
+        return cls.objects.get(*args, **kwargs)
+
+    def __str__(self):
+        # You can customize this as needed
+        return f"{pprint(self.__dict__)}"
+
+class UserProfile(BaseModel):
     """Extended user profile for document owners"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     display_name = models.CharField(max_length=100, blank=True)
@@ -13,10 +33,7 @@ class UserProfile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.display_name or self.user.username}'s Profile"
-
-class Document(models.Model):
+class Document(BaseModel):
     """Represents an uploaded document"""
     DOCUMENT_TYPES = [
         ('cv', 'CV/Resume'),
@@ -67,7 +84,7 @@ class Document(models.Model):
         return f"{self.title} ({self.owner.username})"
 
 
-class DocumentChunk(models.Model):
+class DocumentChunk(BaseModel):
     """Represents a chunk of text extracted from a document with its embedding"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='chunks')
