@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'ai_interviewee'
+    'ai_interviewee',
+    'django_extensions'
 ]
 
 MIDDLEWARE = [

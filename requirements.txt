@@ -5,3 +5,4 @@ requests
 gunicorn
 pgvector
 psycopg2-binary
+django-extensions
