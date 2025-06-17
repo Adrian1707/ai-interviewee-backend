@@ -4,3 +4,4 @@ dotenv
 requests
 gunicorn
 pgvector
+psycopg2-binary
