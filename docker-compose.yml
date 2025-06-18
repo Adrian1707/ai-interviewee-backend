@@ -46,9 +46,16 @@ services:
       - PYTHONUNBUFFERED=1
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DATABASE_URL=postgres://myuser:mypassword@db:5432/mydb
+      - DB_HOST=db
+      - DB_NAME=mydb
+      - DB_USER=myuser
+      - DB_PASSWORD=mypassword
+      - DB_PORT=5432
     depends_on:
       - web
       - redis
+      - db # Add db as a dependency for celery_worker
     command: celery -A ai_interviewee worker -l info
     restart: unless-stopped
 

@@ -1,20 +1,103 @@
 from celery import shared_task
-import time
+from django.utils import timezone
+from django.core.files.storage import default_storage
+from .models import Document, DocumentChunk
+from .utils import extract_text_from_file, chunk_text
+import logging
+import traceback
 
-@shared_task
-def add(x, y):
-    print(f"Executing add task with {x} and {y}")
-    time.sleep(5) # Simulate a long-running task
-    return x + y
+logger = logging.getLogger(__name__)
 
-@shared_task
-def multiply(x, y):
-    print(f"Executing multiply task with {x} and {y}")
-    return x * y
 
-@shared_task
-def long_running_task():
-    print("Starting long running task...")
-    time.sleep(10) # Simulate a very long task
-    print("Long running task finished.")
-    return "Task completed!"
+@shared_task(bind=True, max_retries=3)
+def process_document_task(self, document_id):
+    """
+    Main task to process an uploaded document
+    """
+    try:
+        # Get the document
+        document = Document.objects.get(id=document_id)
+        
+        # Update status to processing
+        document.processing_status = 'processing'
+        document.save()
+        
+        logger.info(f"Starting processing for document {document_id}")
+        
+        # Extract text from the document
+        text_content = extract_text_from_file(document.file.path)
+        
+        if not text_content:
+            raise Exception("No text content could be extracted from the document")
+        
+        # Chunk the text
+        chunks = chunk_text(text_content)
+        
+        logger.info(f"Created {len(chunks)} chunks for document {document_id}")
+        
+        # Create DocumentChunk objects and trigger embedding generation
+        for i, chunk_data in enumerate(chunks):
+            chunk = DocumentChunk.objects.create(
+                document=document,
+                content=chunk_data['content'],
+                chunk_index=i,
+                page_number=chunk_data.get('page_number'),
+                start_char=chunk_data.get('start_char'),
+                end_char=chunk_data.get('end_char'),
+                metadata=chunk_data.get('metadata', {})
+            )
+            
+            # Queue embedding generation (placeholder for now)
+            generate_embedding_task.delay(chunk.id)
+        
+        # Update document status
+        document.processing_status = 'completed'
+        document.processed_at = timezone.now()
+        document.save()
+        
+        logger.info(f"Successfully processed document {document_id}")
+        
+    except Document.DoesNotExist:
+        logger.error(f"Document {document_id} not found")
+        raise
+    
+    except Exception as e:
+        logger.error(f"Error processing document {document_id}: {str(e)}")
+        logger.error(traceback.format_exc())
+        
+        # Update document with error status
+        try:
+            document = Document.objects.get(id=document_id)
+            document.processing_status = 'failed'
+            document.processing_error = str(e)
+            document.save()
+        except:
+            pass
+        
+        # Retry the task
+        raise self.retry(exc=e, countdown=60)
+
+
+@shared_task(bind=True, max_retries=3)
+def generate_embedding_task(self, chunk_id):
+    """
+    Placeholder task for generating embeddings
+    This is where you'll add your embedding logic later
+    """
+    try:
+        chunk = DocumentChunk.objects.get(id=chunk_id)
+        logger.info(f"Generating embedding for chunk {chunk_id} (placeholder)")
+        
+        # TODO: Implement actual embedding generation
+        # For now, just log that we would generate an embedding
+        logger.info(f"Would generate embedding for chunk: {chunk.content[:100]}...")
+        
+        return f"Embedding generated for chunk {chunk_id}"
+        
+    except DocumentChunk.DoesNotExist:
+        logger.error(f"DocumentChunk {chunk_id} not found")
+        raise
+    
+    except Exception as e:
+        logger.error(f"Error generating embedding for chunk {chunk_id}: {str(e)}")
+        raise self.retry(exc=e, countdown=30)

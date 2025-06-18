@@ -91,7 +91,7 @@ class DocumentChunk(BaseModel):
     chunk_index = models.PositiveIntegerField()  # Order within the document
     
     # Embedding (using pgvector)
-    embedding = VectorField(dimensions=1536)  # Adjust dimensions based on your embedding model
+    embedding = VectorField(dimensions=1536, blank=True, null=True)  # Adjust dimensions based on your embedding model
     
     # Metadata
     page_number = models.PositiveIntegerField(null=True, blank=True)
@@ -111,6 +111,3 @@ class DocumentChunk(BaseModel):
         # Add GIN index for vector similarity search
         # You'll need to create this manually via migration:
         # CREATE INDEX CONCURRENTLY ON myapp_documentchunk USING ivfflat (embedding vector_cosine_ops);
-
-    def __str__(self):
-        return f"Chunk {self.chunk_index} of {self.document.title}"

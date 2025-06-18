@@ -11,6 +11,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from django.utils import timezone
 from .models import Document
+from .tasks import process_document_task
 from .serializers import DocumentUploadSerializer, DocumentSerializer
 import logging
 
@@ -38,7 +39,7 @@ class DocumentUploadView(APIView):
                 document = serializer.save()
                 
                 # Trigger async processing
-                # process_document_task.delay(document.id)
+                process_document_task.delay(document.id)
                 
                 logger.info(f"Document {document.id} uploaded and queued for processing")
                 
