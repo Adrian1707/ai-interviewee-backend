@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.core.files.storage import default_storage
 from .models import Document, DocumentChunk
 from .utils import extract_text_from_file, chunk_text
+from .services import OpenAIEmbeddingService
 import logging
 import traceback
 
@@ -86,13 +87,21 @@ def generate_embedding_task(self, chunk_id):
     """
     try:
         chunk = DocumentChunk.objects.get(id=chunk_id)
-        logger.info(f"Generating embedding for chunk {chunk_id} (placeholder)")
+        logger.info(f"Generating embedding for chunk {chunk_id}")
         
-        # TODO: Implement actual embedding generation
-        # For now, just log that we would generate an embedding
-        logger.info(f"Would generate embedding for chunk: {chunk.content[:100]}...")
+        # Initialize the embedding service
+        embedding_service = OpenAIEmbeddingService()
         
-        return f"Embedding generated for chunk {chunk_id}"
+        # Generate the embedding
+        embedding = embedding_service.generate_embedding(chunk.content)
+        
+        if embedding:
+            chunk.embedding = embedding
+            chunk.save()
+            logger.info(f"Successfully generated and saved embedding for chunk {chunk_id}")
+            return f"Embedding generated for chunk {chunk_id}"
+        else:
+            raise Exception("Embedding generation returned no data.")
         
     except DocumentChunk.DoesNotExist:
         logger.error(f"DocumentChunk {chunk_id} not found")
@@ -100,4 +109,5 @@ def generate_embedding_task(self, chunk_id):
     
     except Exception as e:
         logger.error(f"Error generating embedding for chunk {chunk_id}: {str(e)}")
+        # Retry the task
         raise self.retry(exc=e, countdown=30)
