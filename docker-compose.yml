@@ -13,13 +13,40 @@ services:
       - DEBUG=1
       - PYTHONUNBUFFERED=1
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Database connection for Django
+      - DATABASE_URL=postgres://myuser:mypassword@db:5432/mydb
+      - DB_HOST=db # This is the crucial one for the hostname inside Docker
+      - DB_NAME=mydb
+      - DB_USER=myuser
+      - DB_PASSWORD=mypassword
+      - DB_PORT=5432
+      # OR individual variables:
+      # - DB_HOST=db
+      # - DB_NAME=mydb
+      # - DB_USER=myuser
+      # - DB_PASSWORD=mypassword
+    depends_on:
+      db:
+        condition: service_healthy # Wait for the DB healthcheck
+    # Command to run your Django app (adjust based on your project)
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8080"
     restart: unless-stopped
-    stdin_open: true
-    tty: true
+    # stdin_open: true # Often not needed for web services
+    # tty: true        # Often not needed for web services
   
   db:
-    image: postgres:14
+    image: pgvector/pgvector:pg15
     environment:
       POSTGRES_DB: mydb
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
+    volumes:
+      - db_data:/var/lib/postgresql/data # Persist DB data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data: # Define the named volume

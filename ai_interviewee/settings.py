@@ -32,13 +32,16 @@ import os
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'mydatabase'),
-        'USER': os.getenv('DB_USER', 'myuser'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'mypassword'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),  # or 'db' if using compose network
-        'PORT': os.getenv('DB_PORT', '5432'),
+        'NAME': os.environ.get('DB_NAME', 'mydb'),       # Default to 'mydb' if not set
+        'USER': os.environ.get('DB_USER', 'myuser'),     # Default to 'myuser' if not set
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'mypassword'), # Default if not set
+        'HOST': os.environ.get('DB_HOST', 'localhost'),  # IMPORTANT: Default to 'localhost' for local dev, 'db' for Docker
+        'PORT': os.environ.get('DB_PORT', '5432'),       # Default to '5432'
     }
 }
+
+# Ensure DEBUG and other settings also read from environment
+DEBUG = os.environ.get('DEBUG', 'False') == '1' # Convert string '1' to boolean True
 
 
 # Application definition
@@ -90,13 +93,6 @@ WSGI_APPLICATION = 'ai_interviewee.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
 
 
 # Password validation
