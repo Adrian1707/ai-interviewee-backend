@@ -9,3 +9,5 @@ django-extensions
 djangorestframework
 django-cors-headers
 pdfminer.six
+celery
+redis
