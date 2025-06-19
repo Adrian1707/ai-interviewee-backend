@@ -2,7 +2,8 @@ import logging
 import openai
 from django.conf import settings
 from django.db.models import F
-from ai_interviewee.models import DocumentChunk, UserProfile
+from pgvector.django import L2Distance
+from ai_interviewee.models import Document, DocumentChunk, UserProfile
 from .openai_embedding_service import OpenAIEmbeddingService
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,7 @@ class RagService:
     def __init__(self):
         self.embedding_service = OpenAIEmbeddingService(api_key=settings.OPENAI_API_KEY)
         self.openai_client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
-        self.chat_model = "gpt-3.5-turbo" # Or gpt-4, depending on preference/availability
+        self.chat_model = "gpt-4.1-mini" # Or gpt-4, depending on preference/availability
 
     def call(self, question: str, persona: UserProfile) -> str:
         """
@@ -35,19 +36,22 @@ class RagService:
             if not isinstance(question_embedding, list):
                 question_embedding = list(question_embedding)
 
-            similar_chunks = DocumentChunk.objects.filter(persona=persona).order_by(
-                F('embedding').l2_distance(question_embedding)
-            ).limit(5)
+
+            user = persona.user
+            user_documents = Document.objects.filter(owner=user)
+            similar_chunks = DocumentChunk.objects.filter(document__in=user_documents).annotate(
+                distance=L2Distance('embedding', question_embedding)
+            ).order_by('distance')[:5]
             
             context_chunks = [chunk.content for chunk in similar_chunks]
-            logger.debug(f"Retrieved {len(context_chunks)} similar document chunks for persona {persona.name}.")
+            logger.debug(f"Retrieved {len(context_chunks)} similar document chunks for persona")
         except Exception as e:
             logger.error(f"Error querying similar document chunks: {e}")
             return "Error: Could not retrieve relevant information."
 
         # 3. Build the detailed system prompt with the retrieved context chunks
         system_prompt = (
-            f"You are an AI assistant that embodies the professional persona of {persona.name}.\n"
+            f"You are an AI assistant that embodies the professional persona of Adrian Booth.\n"
             "Your purpose is to answer questions from a potential interviewer based *strictly* and *exclusively* on the context provided below.\n\n"
             "Do not use any outside knowledge. Do not infer or invent information that is not explicitly stated in the context.\n"
 
@@ -56,7 +60,7 @@ class RagService:
             "- \"That topic isn't covered in the experience I have on file.\"\n"
             "- \"I can't answer that question based on the information available to me.\"\n\n"
             
-            f"Answer from a first-person perspective, as if you are {persona.name}. Be professional, concise, and helpful.\n\n"
+            f"Answer from a first-person perspective, as if you are Adrian Booth. Be professional, concise, and helpful.\n\n"
             "---\n"
             "CONTEXT:\n" + "\n".join(context_chunks) + "\n"
             "---\n\n"

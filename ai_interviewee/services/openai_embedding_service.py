@@ -1,7 +1,7 @@
 import os
 import logging
 from typing import Optional, List, Union
-
+from django.conf import settings
 import openai
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class OpenAIEmbeddingService:
     DEFAULT_MODEL = "text-embedding-3-small"
     
     def __init__(self, api_key: Optional[str] = None, model: str = DEFAULT_MODEL) -> None:
-        api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        api_key = api_key or settings.OPENAI_API_KEY
         if not api_key:
             raise ValueError(
                 "OpenAI API key not provided. Set OPENAI_API_KEY environment "

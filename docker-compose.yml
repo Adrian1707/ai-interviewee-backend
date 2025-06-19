@@ -86,53 +86,6 @@ services:
       timeout: 5s
       retries: 5
 
-  tests:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - .:/app
-    environment:
-      - DEBUG=1
-      - PYTHONUNBUFFERED=1
-      - PYTHONPATH=/app
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - DJANGO_SETTINGS_MODULE=ai_interviewee.settings
-      - DATABASE_URL=postgres://myuser:mypassword@db:5432/mydb
-      - DB_HOST=db
-      - DB_NAME=mydb
-      - DB_USER=myuser
-      - DB_PASSWORD=mypassword
-      - DB_PORT=5432
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    command: 
-      - sh
-      - -c
-      - |
-        pytest tests/
-    restart: never
-
-
-  # test-db:
-  #   image: pgvector/pgvector:pg15
-  #   environment:
-  #     - POSTGRES_DB=test_mydb
-  #     - POSTGRES_USER=testuser
-  #     - POSTGRES_PASSWORD=testpassword
-  #   ports:
-  #     - "5433:5432"  # Different port to avoid conflicts
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U testuser -d test_mydb"]
-  #     interval: 5s
-  #     timeout: 5s
-  #     retries: 5
-  #   profiles:
-  #     - test
-
 volumes:
   db_data: # Define the named volume
   redis_data: # Define the named volume for Redis
