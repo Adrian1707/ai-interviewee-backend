@@ -85,6 +85,28 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    environment:
+      - DEBUG=1
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DJANGO_SETTINGS_MODULE=ai_interviewee.settings
+      - DATABASE_URL=postgres://myuser:mypassword@db:5432/mydb
+      - DB_HOST=db
+      - DB_NAME=mydb
+      - DB_USER=myuser
+      - DB_PASSWORD=mypassword
+      - DB_PORT=5432
+    command: >
+      sh -c "pytest tests/"
+    restart: never
 
 volumes:
   db_data: # Define the named volume

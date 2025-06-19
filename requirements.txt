@@ -11,3 +11,5 @@ django-cors-headers
 pdfminer.six
 celery
 redis
+python-docx
+pytest
