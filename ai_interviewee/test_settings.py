@@ -39,3 +39,6 @@ LOGGING = {
         'handlers': ['null'],
     },
 }
+
+# Add a dummy OpenAI API key for testing purposes
+OPENAI_API_KEY = 'test-dummy-key'

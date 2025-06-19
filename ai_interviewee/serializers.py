@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.core.validators import FileExtensionValidator
 from .models import Document
-from .models import User
+from django.contrib.auth.models import User
 
 class DocumentUploadSerializer(serializers.ModelSerializer):
     file = serializers.FileField(

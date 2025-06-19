@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from ai_interviewee.embedding_service import OpenAIEmbeddingService
+from ai_interviewee.services import OpenAIEmbeddingService
 import os
 
 @pytest.fixture

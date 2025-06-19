@@ -10,9 +10,10 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from django.utils import timezone
-from .models import Document
+from .models import Document, UserProfile
 from .tasks import process_document_task
 from .serializers import DocumentUploadSerializer, DocumentSerializer
+from .services.rag_service import RagService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -65,3 +66,53 @@ class DocumentUploadView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class RagQueryView(APIView):
+    """
+    API endpoint for querying the RAG service.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        question = request.query_params.get('question', None)
+        persona_id = request.query_params.get('persona_id', None)
+
+        if not question:
+            return Response(
+                {'error': 'A "question" query parameter is required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not persona_id:
+            return Response(
+                {'error': 'A "persona_id" query parameter is required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            persona = UserProfile.objects.get(id=persona_id)
+        except UserProfile.DoesNotExist:
+            return Response(
+                {'error': f'Persona with ID {persona_id} not found.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"Error retrieving persona: {e}")
+            return Response(
+                {'error': 'An error occurred while retrieving the persona.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        try:
+            rag_service = RagService()
+            response_text = rag_service.call(question, persona)
+            return Response(
+                {'response': response_text},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            logger.error(f"Error calling RAG service: {e}")
+            return Response(
+                {'error': 'An error occurred while processing your query.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

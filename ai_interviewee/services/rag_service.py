@@ -2,8 +2,8 @@ import logging
 import openai
 from django.conf import settings
 from django.db.models import F
-from .models import DocumentChunk, UserProfile
-from .embedding_service import OpenAIEmbeddingService # Import from new file
+from ai_interviewee.models import DocumentChunk, UserProfile
+from .openai_embedding_service import OpenAIEmbeddingService
 
 logger = logging.getLogger(__name__)
 

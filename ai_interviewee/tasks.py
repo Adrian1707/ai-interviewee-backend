@@ -1,7 +1,7 @@
 from celery import shared_task
 from django.utils import timezone
 from django.core.files.storage import default_storage
-from .models import Document, DocumentChunk
+from ai_interviewee.models import Document, DocumentChunk
 from .utils import extract_text_from_file, chunk_text
 from .services import OpenAIEmbeddingService
 import logging

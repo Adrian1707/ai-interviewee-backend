@@ -58,4 +58,6 @@ export DB_PORT=5432
 python manage.py migrate --settings=ai_interviewee.test_settings
 
 # Run tests with proper Django configuration
-pytest --ds=ai_interviewee.test_settings -v
+TEST_FILE="$1"
+
+pytest "${TEST_FILE}" --ds=ai_interviewee.test_settings -v

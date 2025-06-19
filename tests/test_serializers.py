@@ -3,7 +3,8 @@ from unittest.mock import MagicMock, patch
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import serializers
 from ai_interviewee.serializers import DocumentUploadSerializer, DocumentSerializer
-from ai_interviewee.models import Document, User
+from ai_interviewee.models import Document
+from django.contrib.auth.models import User
 
 @pytest.fixture
 def mock_document_file():
@@ -51,7 +52,7 @@ def mock_document(mock_user):
 class TestDocumentUploadSerializer:
 
     def test_valid_document_upload_serializer(self, mock_document_file, mock_user):
-        with patch('ai_interviewee.models.User.objects') as mock_user_objects, \
+        with patch('django.contrib.auth.models.User.objects') as mock_user_objects, \
              patch('ai_interviewee.models.Document.objects.create') as mock_create:
             
             mock_user_objects.last.return_value = mock_user
@@ -122,7 +123,7 @@ class TestDocumentUploadSerializer:
         assert error_found == False
 
     def test_document_upload_serializer_no_user_exists(self, mock_document_file):
-        with patch('ai_interviewee.models.User.objects') as mock_user_objects:
+        with patch('django.contrib.auth.models.User.objects') as mock_user_objects:
             mock_user_objects.last.return_value = None
             data = {
                 'title': 'No User Doc',
