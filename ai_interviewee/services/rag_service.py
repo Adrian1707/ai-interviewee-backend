@@ -78,7 +78,7 @@ class RagService:
                 model=self.chat_model,
                 messages=messages,
                 temperature=0.7, # Adjust as needed for creativity vs. factualness
-                max_tokens=500 # Limit response length
+                max_tokens=1000 # Limit response length
             )
             ai_response = chat_completion.choices[0].message.content
             logger.info("Successfully generated AI response.")

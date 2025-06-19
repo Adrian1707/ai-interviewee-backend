@@ -66,6 +66,35 @@ class DocumentUploadView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class DocumentView(APIView):
+    """
+        API endpoint for getting user documents
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        persona_id = request.query_params.get('persona_id', None)
+        
+        if not persona_id:
+            return Response({'error': 'Missing persona_id parameter'}, status=status.HTTP_400_BAD_REQUEST)
+        user_profile = UserProfile.objects.filter(id=persona_id).first()
+        
+        if not user_profile:
+            return Response({'error': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        user = user_profile.user
+        user_documents = Document.objects.filter(owner=user)
+
+        response = [
+            {"title": doc.title, "uploaded_at": doc.uploaded_at, "document_type": doc.document_type}
+            for doc in user_documents
+        ]
+
+        return Response(
+                {'response': response},
+                status=status.HTTP_200_OK
+            )
+
 
 class RagQueryView(APIView):
     """
