@@ -1,6 +1,9 @@
 # Start from a Python base image
 FROM python:3.11-slim
 
+# Install PostgreSQL client for psql command
+RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
+
 # Set workdir
 WORKDIR /app
 

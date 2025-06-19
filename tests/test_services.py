@@ -24,14 +24,14 @@ def test_openai_embedding_service_initialization_with_env_var():
     """Test that the service initializes correctly when API key is in environment."""
     os.environ['OPENAI_API_KEY'] = 'test_env_key'
     service = OpenAIEmbeddingService()
-    assert service.model == "text-embedding-ada-002"
+    assert service.model == "text-embedding-3-small"
     assert service.client is not None
     del os.environ['OPENAI_API_KEY']
 
 def test_openai_embedding_service_initialization_with_arg():
     """Test that the service initializes correctly when API key is passed as argument."""
     service = OpenAIEmbeddingService(api_key='test_arg_key')
-    assert service.model == "text-embedding-ada-002"
+    assert service.model == "text-embedding-3-small"
     assert service.client is not None
 
 def test_openai_embedding_service_initialization_no_api_key():
@@ -53,7 +53,7 @@ def test_generate_embedding_success(openai_embedding_service, mock_openai_client
 
     mock_openai_client.embeddings.create.assert_called_once_with(
         input=text,
-        model="text-embedding-ada-002"
+        model="text-embedding-3-small"
     )
     assert embedding == mock_embedding
 
