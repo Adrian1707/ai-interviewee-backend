@@ -37,6 +37,7 @@ DATABASES = {
         'PASSWORD': os.environ.get('DB_PASSWORD', 'mypassword'), # Default if not set
         'HOST': os.environ.get('DB_HOST', 'localhost'),  # IMPORTANT: Default to 'localhost' for local dev, 'db' for Docker
         'PORT': os.environ.get('DB_PORT', '5432'),       # Default to '5432'
+        'ATOMIC_REQUESTS': False,
     }
 }
 

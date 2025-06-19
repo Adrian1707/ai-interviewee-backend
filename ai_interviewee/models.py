@@ -44,6 +44,13 @@ class Document(BaseModel):
         ('project_explanation', 'Project Explanation'),
         ('other', 'Other'),
     ]
+
+    DOCUMENT_TYPE_CHOICES = [
+        ('PDF', 'PDF'),
+        ('TXT', 'Text File'),
+        ('DOC', 'Word Document'),
+        ('DOCX', 'Word Document (DOCX)'),
+    ]
     
     PROCESSING_STATUS = [
         ('pending', 'Pending'),

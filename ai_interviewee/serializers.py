@@ -15,7 +15,19 @@ class DocumentUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
         fields = ['title', 'document_type', 'file', 'is_public', 'tags']
-        
+        document_type = serializers.ChoiceField(
+            choices=Document.DOCUMENT_TYPE_CHOICES  # Add this
+        )
+        extra_kwargs = {
+            'title': {'required': False},
+            'document_type': {'required': False},
+            'is_public': {'required': False},
+        }
+        tags = serializers.JSONField(  # Explicitly declare as JSONField
+            required=False,
+            help_text='JSON array of tags'
+        )
+
     def validate_file(self, value):
         # Additional file validation
         if value.size > 10 * 1024 * 1024:  # 10MB limit

@@ -30,7 +30,6 @@ class DocumentUploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request, *args, **kwargs):
-        # breakpoint()
         serializer = DocumentUploadSerializer(data=request.data, context={'request': request})
         
         if serializer.is_valid():

@@ -21,4 +21,5 @@ def django_db_setup():
         "PASSWORD": os.environ.get("DB_PASSWORD", "mypassword"),
         "USER": os.environ.get("DB_USER", "myuser"),
         "PORT": os.environ.get("DB_PORT", "5432"),
+        'ATOMIC_REQUESTS': False,
     }
