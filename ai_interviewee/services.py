@@ -2,7 +2,7 @@ import logging
 import openai
 from django.conf import settings
 from django.db.models import F
-from .models import DocumentChunk, Persona
+from .models import DocumentChunk, UserProfile
 from .embedding_service import OpenAIEmbeddingService # Import from new file
 
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ class RagService:
         self.openai_client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
         self.chat_model = "gpt-3.5-turbo" # Or gpt-4, depending on preference/availability
 
-    def call(self, question: str, persona: Persona) -> str:
+    def call(self, question: str, persona: UserProfile) -> str:
         """
         Performs RAG logic to answer a question based on retrieved document chunks.
         """
