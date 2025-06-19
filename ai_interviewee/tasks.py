@@ -67,13 +67,12 @@ def process_document_task(self, document_id):
         logger.error(traceback.format_exc())
         
         # Update document with error status
-        try:
-            document = Document.objects.get(id=document_id)
+        # The 'document' object should be defined here unless Document.DoesNotExist was raised,
+        # which is caught separately.
+        if 'document' in locals() and document: # Ensure document object exists
             document.processing_status = 'failed'
             document.processing_error = str(e)
             document.save()
-        except:
-            pass
         
         # Retry the task
         raise self.retry(exc=e, countdown=60)
