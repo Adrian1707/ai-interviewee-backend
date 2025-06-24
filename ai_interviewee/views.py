@@ -83,10 +83,10 @@ class DocumentView(APIView):
             return Response({'error': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
 
         user = user_profile.user
-        user_documents = Document.objects.filter(owner=user)
+        user_documents = Document.objects.filter(owner=user).order_by('uploaded_at')
 
         response = [
-            {"title": doc.title, "uploaded_at": doc.uploaded_at, "document_type": doc.document_type}
+            {"name": doc.title, "status": doc.processing_status, "type": doc.document_type}
             for doc in user_documents
         ]
 

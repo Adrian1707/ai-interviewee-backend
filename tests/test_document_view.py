@@ -39,18 +39,10 @@ class DocumentViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data, {'error': 'User profile not found'})
 
-    @patch('ai_interviewee.models.UserProfile.objects.filter')
-    @patch('ai_interviewee.models.Document.objects.filter')
-    def test_get_documents_success(self, mock_document_filter, mock_user_profile_filter):
+    def test_get_documents_success(self):
         """
         Ensure we can retrieve documents successfully for a given persona_id.
         """
-        # Mock UserProfile.objects.filter to return our user_profile
-        mock_user_profile_filter.return_value.first.return_value = self.user_profile
-
-        # Mock Document.objects.filter to return our documents
-        mock_document_filter.return_value = [self.document1, self.document2]
-
         response = self.client.get(f'/api/documents/?persona_id={self.user_profile.id}')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -62,5 +54,5 @@ class DocumentViewTests(APITestCase):
         self.assertEqual(response.data['response'][1]['document_type'], 'docx')
         # Check datetime format
         
-        # self.assertIn('2023-01-01T10:00:00Z', response.data['response'][0]['uploaded_at'].date().isoformat())
-        # self.assertIn('2023-01-02T11:00:00Z', response.data['response'][1]['uploaded_at'].date().isoformat())
+        # self.assertIn('2023-01-01T10:00:00', response.data['response'][0]['uploaded_at'])
+        # self.assertIn('2023-01-02T11:00:00', response.data['response'][1]['uploaded_at'])
