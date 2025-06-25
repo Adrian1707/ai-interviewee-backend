@@ -3,8 +3,9 @@ from django.contrib import admin
 import os
 from . import views
 from django.conf import settings
+from django.contrib.auth.models import User
 
-from rest_framework import status, permissions
+from rest_framework import generics, status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -12,9 +13,10 @@ from rest_framework.views import APIView
 from django.utils import timezone
 from .models import Document, UserProfile
 from .tasks import process_document_task
-from .serializers import DocumentUploadSerializer, DocumentSerializer
+from .serializers import DocumentUploadSerializer, DocumentSerializer, RegisterSerializer, LoginSerializer, UserSerializer
 from .services.rag_service import RagService
 import logging
+from django.contrib.auth import login, logout
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +24,37 @@ def home(request):
     """Render a form for the user to upload a document"""
     return render(request, 'home.html')
 
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = RegisterSerializer
+
+class LoginView(generics.GenericAPIView):
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = LoginSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data
+        login(request, user)
+        return Response(UserSerializer(user).data)
+
+class LogoutView(APIView):
+    def post(self, request):
+        logout(request)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class CurrentUserView(APIView):
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
 
 class DocumentUploadView(APIView):
     """
     API endpoint for uploading documents
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request, *args, **kwargs):
@@ -70,20 +97,10 @@ class DocumentView(APIView):
     """
         API endpoint for getting user documents
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        persona_id = request.query_params.get('persona_id', None)
-        
-        if not persona_id:
-            return Response({'error': 'Missing persona_id parameter'}, status=status.HTTP_400_BAD_REQUEST)
-        user_profile = UserProfile.objects.filter(id=persona_id).first()
-        
-        if not user_profile:
-            return Response({'error': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        user = user_profile.user
-        user_documents = Document.objects.filter(owner=user).order_by('uploaded_at')
+        user_documents = Document.objects.filter(owner=request.user).order_by('uploaded_at')
 
         response = [
             {"name": doc.title, "status": doc.processing_status, "type": doc.document_type}
@@ -100,11 +117,10 @@ class RagQueryView(APIView):
     """
     API endpoint for querying the RAG service.
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         question = request.query_params.get('question', None)
-        persona_id = request.query_params.get('persona_id', None)
 
         if not question:
             return Response(
@@ -112,29 +128,9 @@ class RagQueryView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        if not persona_id:
-            return Response(
-                {'error': 'A "persona_id" query parameter is required.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            persona = UserProfile.objects.get(id=persona_id)
-        except UserProfile.DoesNotExist:
-            return Response(
-                {'error': f'Persona with ID {persona_id} not found.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            logger.error(f"Error retrieving persona: {e}")
-            return Response(
-                {'error': 'An error occurred while retrieving the persona.'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
         try:
             rag_service = RagService()
-            response_text = rag_service.call(question, persona)
+            response_text = rag_service.call(question, request.user.profile)
             return Response(
                 {'response': response_text},
                 status=status.HTTP_200_OK

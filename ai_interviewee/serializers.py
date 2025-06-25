@@ -1,7 +1,34 @@
 from rest_framework import serializers
 from django.core.validators import FileExtensionValidator
-from .models import Document
+from .models import Document, UserProfile
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email')
+
+class RegisterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'password')
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        user = User.objects.create_user(validated_data['username'], validated_data['email'], validated_data['password'])
+        UserProfile.objects.create(user=user)
+        return user
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+
+    def validate(self, data):
+        user = authenticate(**data)
+        if user and user.is_active:
+            return user
+        raise serializers.ValidationError("Invalid credentials")
 
 class DocumentUploadSerializer(serializers.ModelSerializer):
     file = serializers.FileField(
@@ -35,16 +62,8 @@ class DocumentUploadSerializer(serializers.ModelSerializer):
         return value
     
     def create(self, validated_data):
-        last_user = User.objects.last()
-        
-        if not last_user:
-            raise serializers.ValidationError("No users exist in the database")
-        
-        # Set the owner to the last user
-        validated_data['owner'] = last_user
-        
         # Set the owner to the current user
-        # validated_data['owner'] = self.context['request'].user
+        validated_data['owner'] = self.context['request'].user
         
         # Extract file metadata
         file = validated_data['file']

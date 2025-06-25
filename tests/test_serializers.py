@@ -20,10 +20,18 @@ def mock_user():
     """Fixture for a mock User instance."""
     user = MagicMock(spec=User)
     user.username = 'testuser'
+    user.id = 1
     # Add _state attribute that Django models require
     user._state = MagicMock()
     user._state.db = None
     return user
+
+@pytest.fixture
+def mock_request(mock_user):
+    """Fixture for a mock request object with an authenticated user."""
+    request = MagicMock()
+    request.user = mock_user
+    return request
 
 @pytest.fixture
 def mock_document(mock_user):
@@ -51,11 +59,8 @@ def mock_document(mock_user):
 @pytest.mark.django_db
 class TestDocumentUploadSerializer:
 
-    def test_valid_document_upload_serializer(self, mock_document_file, mock_user):
-        with patch('django.contrib.auth.models.User.objects') as mock_user_objects, \
-             patch('ai_interviewee.models.Document.objects.create') as mock_create:
-            
-            mock_user_objects.last.return_value = mock_user
+    def test_valid_document_upload_serializer(self, mock_document_file, mock_user, mock_request):
+        with patch('ai_interviewee.models.Document.objects.create') as mock_create:
             mock_document = MagicMock()
             mock_document.owner = mock_user
             mock_document.file_size = mock_document_file.size
@@ -69,7 +74,7 @@ class TestDocumentUploadSerializer:
                 'is_public': True,
                 'tags': ['test', 'example']
             }
-            serializer = DocumentUploadSerializer(data=data)
+            serializer = DocumentUploadSerializer(data=data, context={'request': mock_request})
             assert serializer.is_valid(raise_exception=True)
             
             # Test create method
@@ -122,22 +127,6 @@ class TestDocumentUploadSerializer:
 
         assert error_found == False
 
-    def test_document_upload_serializer_no_user_exists(self, mock_document_file):
-        with patch('django.contrib.auth.models.User.objects') as mock_user_objects:
-            mock_user_objects.last.return_value = None
-            data = {
-                'title': 'No User Doc',
-                'document_type': 'cv',
-                'file': mock_document_file,
-                'is_public': True,
-                'tags': []
-            }
-            serializer = DocumentUploadSerializer(data=data)
-            assert serializer.is_valid(raise_exception=True)
-            with pytest.raises(serializers.ValidationError) as excinfo:
-                serializer.save()
-            assert "No users exist in the database" in str(excinfo.value)
-
 @pytest.mark.django_db
 class TestDocumentSerializer:
 
@@ -171,25 +160,3 @@ class TestDocumentSerializer:
         mock_document.file = None
         serializer = DocumentSerializer(instance=mock_document, context={})
         assert serializer.data['file_url'] is None
-
-    # def test_document_serializer_read_only_fields(self, mock_document):
-    #     serializer = DocumentSerializer(instance=mock_document)
-    #     data = serializer.data
-        
-    #     # Attempt to update read-only fields (should not change)
-    #     update_data = {
-    #         'id': 999,
-    #         'file_size': 5000,
-    #         'owner_username': 'newuser',
-    #         'uploaded_at': '2024-01-01T10:00:00Z'
-    #     }
-    #     serializer.update(mock_document, update_data)
-
-    #     # Re-serialize to check if read-only fields were ignored
-    #     updated_serializer = DocumentSerializer(instance=mock_document)
-    #     updated_data = updated_serializer.data
-
-    #     assert updated_data['id'] == mock_document.id
-    #     assert updated_data['file_size'] == mock_document.file_size
-    #     assert updated_data['owner_username'] == mock_document.owner.username
-    #     assert updated_data['uploaded_at'] == mock_document.uploaded_at
