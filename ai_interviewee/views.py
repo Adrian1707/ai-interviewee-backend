@@ -29,6 +29,12 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = (permissions.AllowAny,)
     serializer_class = RegisterSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user_data = serializer.save()
+        return Response(user_data, status=status.HTTP_201_CREATED)
+
 class LoginView(generics.GenericAPIView):
     permission_classes = (permissions.AllowAny,)
     serializer_class = LoginSerializer
@@ -36,9 +42,7 @@ class LoginView(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data
-        login(request, user)
-        return Response(UserSerializer(user).data)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 class LogoutView(APIView):
     def post(self, request):

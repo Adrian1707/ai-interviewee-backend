@@ -1,6 +1,9 @@
 import os
 from pathlib import Path
 import logging
+from django.contrib.auth.backends import BaseBackend
+from django.contrib.auth.models import User
+from django.db.models import Q
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +27,6 @@ def extract_text_from_file(file_path):
         logger.error(f"Error extracting text from {file_path}: {str(e)}")
         raise
 
-
 def extract_text_from_pdf(file_path):
     """
     Extract text from PDF using pdfminer.six
@@ -38,7 +40,6 @@ def extract_text_from_pdf(file_path):
     except Exception as e:
         logger.error(f"Error extracting text from PDF {file_path}: {str(e)}")
         raise
-
 
 def extract_text_from_txt(file_path):
     """
@@ -56,7 +57,6 @@ def extract_text_from_txt(file_path):
             logger.error(f"Error extracting text from TXT {file_path}: {str(e2)}")
             raise
 
-
 def extract_text_from_docx(file_path):
     """
     Extract text from DOCX using python-docx
@@ -71,7 +71,6 @@ def extract_text_from_docx(file_path):
     except Exception as e:
         logger.error(f"Error extracting text from DOCX {file_path}: {str(e)}")
         raise
-
 
 def chunk_text(text, chunk_size=300, overlap=50):
     """
@@ -139,3 +138,18 @@ def chunk_text(text, chunk_size=300, overlap=50):
     
     logger.info(f"Created {len(chunks)} chunks from {len(words)} words")
     return chunks
+
+class EmailBackend(BaseBackend):
+    def authenticate(self, request, email=None, password=None, **kwargs):
+        try:
+            user = User.objects.get(Q(email__iexact=email))
+            if user.check_password(password):
+                return user
+        except User.DoesNotExist:
+            return None
+
+    def get_user(self, user_id):
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None

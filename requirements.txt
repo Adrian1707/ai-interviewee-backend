@@ -14,3 +14,4 @@ redis
 python-docx
 pytest
 pytest-django
+djangorestframework-simplejwt
