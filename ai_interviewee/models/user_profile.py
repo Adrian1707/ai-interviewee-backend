@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from .base_model import BaseModel
 from .skill import Skill
-# from .user_profile_skill import UserProfileSkill
 
 class UserProfile(BaseModel):
     """Extended user profile for document owners"""

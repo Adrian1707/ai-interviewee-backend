@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.core.validators import FileExtensionValidator
-from .models import Document, UserProfile
+from .models import Document, UserProfile, Skill
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -110,4 +110,24 @@ class DocumentSerializer(serializers.ModelSerializer):
             request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(obj.file.url)
+        return None
+
+class SkillNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Skill
+        fields = ('name',)
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    years_of_experience = serializers.SerializerMethodField()
+    skills = SkillNameSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = UserProfile
+        fields = ('id', 'display_name', 'bio', 'years_of_experience', 'skills')
+
+    def get_years_of_experience(self, obj):
+        from datetime import date
+        if obj.career_start_date:
+            return date.today().year - obj.career_start_date.year
         return None

@@ -20,5 +20,6 @@ urlpatterns = [
     path('api/current_user/', views.CurrentUserView.as_view(), name='current_user'),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/user-profiles/', views.UserProfileListView.as_view(), name='user-profile-list'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

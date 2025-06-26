@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 from django.utils import timezone
 from .models import Document, UserProfile
 from .tasks import process_document_task
-from .serializers import DocumentUploadSerializer, DocumentSerializer, RegisterSerializer, LoginSerializer, UserSerializer
+from .serializers import DocumentUploadSerializer, DocumentSerializer, RegisterSerializer, LoginSerializer, UserSerializer, UserProfileSerializer
 from .services.rag_service import RagService
 import logging
 from django.contrib.auth import login, logout
@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 def home(request):
     """Render a form for the user to upload a document"""
     return render(request, 'home.html')
+
+class UserProfileListView(generics.ListAPIView):
+    queryset = UserProfile.objects.filter(is_searchable=True)
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.AllowAny]
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()

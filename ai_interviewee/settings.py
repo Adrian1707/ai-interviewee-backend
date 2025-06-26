@@ -56,8 +56,26 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'ai_interviewee',
     'django_extensions',
-    'corsheaders'
+    'corsheaders',
+    'rest_framework',
+    'rest_framework_simplejwt',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    )
+}
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}
 
 # Celery Configuration
 CELERY_BROKER_URL = 'redis://redis:6379/0'
@@ -73,11 +91,13 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+if os.getenv('DJANGO_PRODUCTION'):
+    MIDDLEWARE.append('django.middleware.csrf.CsrfViewMiddleware')
 
 ROOT_URLCONF = 'ai_interviewee.urls'
 
@@ -120,6 +140,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+]
+
+AUTHENTICATION_BACKENDS = [
+    'ai_interviewee.utils.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 
